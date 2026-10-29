@@ -1,0 +1,62 @@
+---
+layout: runbook
+title: '#4471 · three problems, not one'
+owner: zm-cf
+status: proposed
+reviewed: 2026-10-29
+signature: zm-cf
+---
+
+<script>
+  import ProblemTable from '#lib/kb/ProblemTable.svelte';
+  import CauseTable from '#lib/kb/CauseTable.svelte';
+  import Callout from '#lib/kb/Callout.svelte';
+  import RenderStamp from '#lib/kb/RenderStamp.svelte';
+
+  const repo = 'https://github.com/zm-cf/mega-s01e03/issues';
+  const issues = { parser: `${repo}/1`, hint: `${repo}/2`, 'one-day': `${repo}/3` };
+</script>
+
+[#4471](/kb/incidents/4471) is marked known: one issue, one fix queued. Its reports say otherwise.
+Read by tenant and by what each report says happened to the date, they split into three problems.
+Each one has its own ticket now.
+
+<Callout kind="warn">
+The queued parser fix closes only the first problem. The other two keep coming in after it ships.
+</Callout>
+
+## The problems
+
+<ProblemTable ticket={4471} {issues} />
+
+1. **`parser`: the shared parser reads every date month first.** A day-first tenant's dates come
+   out flipped: 7 April becomes 4 July. Every tenant, every channel except the booking-v3 form.
+2. **`hint`: the booking-v3 form prints `MM/DD/YYYY` under its date field.** The tenant's people
+   type the month first, as told, and the form reads the date the tenant's way. Same symptom,
+   different bug: only form reports, only tenants on booking-v3. Fixing the parser does not touch it;
+   the hint has to follow the tenant's locale.
+3. **`one-day`: the date moves by one day, it does not flip.** "Client in Lisbon got Tuesday. Client
+   in Toronto got Monday." The desk already noted these as one-day moves (`desk-notes.json`), but
+   filed them under `parser` by tenant. A flip never moves a date by one day; this looks like a
+   time-zone conversion.
+
+## How the reports were counted
+
+- One id, one report: the export repeats some reports across pages, and they are counted once.
+- The cause comes from the tenant (locale and booking form, `causes.ts`), not from intake's tag.
+  Intake guesses from the reporter's browser, and that guess is wrong for many of these reports.
+- The numbers above are computed from the export when the page renders. When the desk merges more
+  reports, the table follows.
+
+For comparison, the desk's own view of the same ticket, which puts the one-day moves under `parser`:
+
+<CauseTable ticket={4471} />
+
+## What the desk should change
+
+- Do not close #4471's reports with the parser fix. Move the `hint` and `one-day` reports to their
+  own tickets first.
+- Merging on subject alone ([decision 0001](/kb/decisions/0001-dedupe-by-subject)) put three bugs in
+  one ticket, because they share their subject lines. Merge on cause, not subject.
+
+<RenderStamp {signature} />
